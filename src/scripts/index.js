@@ -1,4 +1,4 @@
-addEventListener('DOMContentLoaded', async (event) => {
+document.addEventListener('DOMContentLoaded', async () => {
   const url = 'https://x8ki-letl-twmt.n7.xano.io/api:I8m-w2H2/victim_key';
   let data = [];
 
@@ -10,7 +10,7 @@ addEventListener('DOMContentLoaded', async (event) => {
 
       // Ensure we have valid data
       if (Array.isArray(data) && data.length > 0) {
-        const tableBody = document.querySelector('tbody');
+        const tableBody = document.querySelector('#victimTable');
 
         // Clear previous table data
         tableBody.innerHTML = '';
@@ -19,14 +19,12 @@ addEventListener('DOMContentLoaded', async (event) => {
         data.forEach((victim, index) => {
           const row = document.createElement('tr');
           row.innerHTML = `
-        <th scope="row">${index + 1}</th>
-        <td>${victim.value}</td>
-        <td>${victim.key}</td>
-        <td>${new Date(victim.created_at).toLocaleString()}</td>
-        <td><button class="btn btn-danger" id="${
-          victim.id
-        }">Delete</button></td>
-      `;
+            <th scope="row">${index + 1}</th>
+            <td>${victim.value}</td>
+            <td>${victim.key}</td>
+            <td>${new Date(victim.created_at).toLocaleString()}</td>
+            <td><button class="btn btn-danger" id="${victim.id}">Delete</button></td>
+          `;
           tableBody.appendChild(row);
         });
       } else {
@@ -45,7 +43,7 @@ addEventListener('DOMContentLoaded', async (event) => {
       // Check if the deletion was successful (status code 200)
       if (response.status === 200) {
         alert('Data has been deleted!');
-        location.reload();
+        await fetchData(); // Refresh data after deletion
       }
     } catch (error) {
       // Handle errors more gracefully
@@ -55,33 +53,33 @@ addEventListener('DOMContentLoaded', async (event) => {
   }
 
   function searchData(query) {
-    return data.filter((d) => d.value.includes(query.toLowerCase()));
+    return data.filter((d) => d.value.toLowerCase().includes(query.toLowerCase()));
   }
 
-  // Call fetchData to load data when the page loads
-  await fetchData();
-
+  // Add event listener to form for searching
   const form = document.querySelector('form');
   form.addEventListener('submit', (e) => {
     e.preventDefault();
-    const dataFiltered = searchData(this.uid.value);
+    const query = document.querySelector('#uid').value.trim();
+    const dataFiltered = searchData(query);
 
-    const tableBody = document.querySelector('#victimTable tbody');
+    const tableBody = document.querySelector('#victimTable');
 
-    if (Array.isArray(data) && dataFiltered.length > 0) {
+    if (Array.isArray(dataFiltered) && dataFiltered.length > 0) {
       // Clear previous table data
       tableBody.innerHTML = '';
       document.querySelector('#noKey').innerText = '';
 
-      // Iterate over the fetched data and create rows for the table
+      // Iterate over the filtered data and create rows for the table
       dataFiltered.forEach((victim, index) => {
         const row = document.createElement('tr');
         row.innerHTML = `
-        <th scope="row">${index + 1}</th>
-        <td>${victim.value}</td>
-        <td>${victim.key}</td>
-        <td>${new Date(victim.created_at).toLocaleString()}</td>
-      `;
+          <th scope="row">${index + 1}</th>
+          <td>${victim.value}</td>
+          <td>${victim.key}</td>
+          <td>${new Date(victim.created_at).toLocaleString()}</td>
+          <td><button class="btn btn-danger" id="${victim.id}">Delete</button></td>
+        `;
         tableBody.appendChild(row);
       });
     } else {
@@ -90,10 +88,15 @@ addEventListener('DOMContentLoaded', async (event) => {
     }
   });
 
-  document.querySelectorAll('.btn-danger').forEach((button) => {
-    button.addEventListener('click', function () {
-      const userId = this.id;
-      deleteUserById(userId); // Call the function to delete the user
-    });
+  // Event delegation for dynamically created delete buttons
+  document.querySelector('#victimTable').addEventListener('click', async (event) => {
+    if (event.target.classList.contains('btn-danger')) {
+      const userId = event.target.id;
+      console.log(userId);
+      await deleteUserById(userId);
+    }
   });
+
+  // Fetch data initially
+  await fetchData();
 });
